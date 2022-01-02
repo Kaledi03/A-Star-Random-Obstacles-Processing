@@ -241,6 +241,8 @@ int distance(Node a, Node b){
 
 
 /**
+*  Legend of colors:
+*
 *  fill(240, 240, 240) ---> Normal element
 *  fill(0, 128, 255)   ---> Element contained in the open_set (element still used by the code)
 *  fill(0, 195, 255)   ---> Element contained in the closed_set
