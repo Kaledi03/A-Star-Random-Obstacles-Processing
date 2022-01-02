@@ -1,15 +1,16 @@
-int l = 50;
-int h;
-int w;
+int l = 20, h, w, goal_x, goal_y; //<>//
 
-ArrayList<Node> openSet = new ArrayList<>();
-ArrayList<Node> closedSet = new ArrayList<>();
+ArrayList<Node> open_set = new ArrayList<>();
+ArrayList<Node> closed_set = new ArrayList<>();
 ArrayList<Node> path = new ArrayList<>();
 int[][] obstacles;
 
 Node start;
 Node goal;
 Node[][] nodes;
+
+
+boolean serachingStarted = false;
 
 /**
 *  The Node class rappresents the basic square from each the grid is
@@ -49,14 +50,16 @@ class Node{
 /**
 *  The 'setup' function populates the two dimensional array of nodes and 
 *  randomly assigns a value to the obstacles 2D array, a value of 1 (with
-*  a 10% probability) rappresents an obstacle while the valueo of 0 rappresents
+*  a 25% probability) rappresents an obstacle while the valueo of 0 rappresents
 *  a normal block; then the programm assigns the reference to the instance of
-*  all the neighbors. In the end there is a call to the 'Astar' function that
-*  will operate the pathfinding
+*  all the neighbors.
 */
 void setup() {
   // SIZE OF THE SCREEN
-  size(700, 600);
+  size(800, 600);
+
+  goal_x = (int)random((width/l)-1);
+  goal_y = (int)random((height/l)-1);
 
   nodes = new Node[height/l][width/l];
   h = height/l;
@@ -68,16 +71,20 @@ void setup() {
     for (int j=0; j<w; j++) {
       nodes[i][j] = new Node(i, j, null);
       
-      fill(255);
+      fill(240, 240, 240);
+      strokeWeight(1);
+      stroke(95, 176, 184);
+      
       if (i == 0 && j == 0) {
         start = nodes[i][j];
         start.g = 0;
       }
-      if (i==4 && j==3) {
+      if (i==goal_y && j==goal_x) {
         goal = nodes[i][j];
         goal.g = Integer.MAX_VALUE;
       }
-      if (random(1)<=0.1) {
+      //random(1)<=0.25
+      if (random(1)<=0.25 && nodes[i][j] != start && nodes[i][j] != goal) {
         obstacles[i][j] = 1;
       } else {
         obstacles[i][j] = 0;
@@ -103,40 +110,27 @@ void setup() {
       }
     }  
   }
-  
-  Astar(); 
 }
 
+
+
+
+
 /**
-*  The draw function displays on the screen the squares where the white is
-*  the base one, the red is the one contained in the 'closedSet', the 
-*  green is the on that's contained in the 'opensSet' and the blue rappresents
-*  the fastest path according to the algorythm.
+*  The 'draw' function (only the first time) starts another thread where
+*  the 'Astar' function will execute then at each frame the function draws
+*  the path via a call to 'display_path'.
 */
 void draw(){
-  for (int i=0; i<h; i++) {
-    for (int j=0; j<w; j++) {
-      fill(255);
-      if (openSet.contains(nodes[i][j])) {
-        fill(0,255,0);
-      }
-            
-      if (closedSet.contains(nodes[i][j])) {
-        fill(255,0,0);
-      }
-          
-      if (path.contains(nodes[i][j])) {
-        fill(0,0,255);
-      }
-         
-      if (obstacles[i][j] == 1) {
-        fill(0);
-      }
-          
-      square(j*l, i*l, l);
-    }  
-  }  //<>//
+  if(!serachingStarted){
+    thread("Astar");
+    serachingStarted = true;
+  }
+  display_path();
+  
 }
+
+
 
 
 /**
@@ -144,78 +138,44 @@ void draw(){
 *  on wikipedia.org ----> https://en.wikipedia.org/wiki/A*_search_algorithm
 */
 void Astar() {
-  for(int i=0; i<h; i++){
-    for(int j=0; j<w; j++){
-      fill(255);
-      for(Node e : openSet){
-        if(e.x == i && e.y == j){
-          fill(0,255,0);
-        } 
-      }
-      for(Node e : closedSet){
-        if(e.x == i && e.y == j){
-          fill(255,0,0);
-        } 
-      }
-      square(j*l, i*l, l);
-    }  
-  }
-  
-  openSet.add(start);
-  while (!openSet.isEmpty()) {
-    for (int i=0; i<h; i++) {
-      for (int j=0; j<w; j++) {
-       fill(255);
-       if (openSet.contains(nodes[i][j])) {
-         fill(0,255,0);
-       }
-        
-       if (closedSet.contains(nodes[i][j])) {
-         fill(255,0,0);
-       }
-       
-       if (path.contains(nodes[i][j])) {
-         fill(0,0,255);
-       }
-       
-       if (obstacles[i][j] == 1) {
-         fill(0);
-       }
-      
-       square(j*l, i*l, l);
-      }  
-    }
+  open_set.add(start);
+  while (!open_set.isEmpty()) {
+    delay(4);
     int lowest = Integer.MAX_VALUE;
     Node current = null;
-    for (Node e : openSet){
+    for (Node e : open_set){
       if(e.f < lowest){
         current = e;
         lowest = current.f;
       }
     }
     
-    openSet.remove(current);
-    closedSet.add(current);
+    create_path(current);
+    
+    open_set.remove(current);
+    closed_set.add(current);
     
     if(current.equals(goal)){
-      createPath(current);
+      create_path(current);
+      print("Found");
       return;
     }
     
-    for(Node n : current.neighbors){
+    for (Node n : current.neighbors) {
       int temp_g = current.g + 1;
-      if(temp_g < n.g){
-        if(!closedSet.contains(n)){
+      if (temp_g < n.g) {
+        if (!closed_set.contains(n)) { 
           n.cameFrom = current;
           n.g = temp_g;
           n.f = n.g + distance(n, goal);
-          if(!openSet.contains(n)){
-            openSet.add(n);
+          if (!open_set.contains(n)) {
+            open_set.add(n);
           }
-        }
+        } //<>//
       }
     }
   } 
+  print("No solution");
 }
 
 
@@ -223,11 +183,46 @@ void Astar() {
 *  By going backwards the function retreaves the shortest path to the destination
 *  and stores this path in the 'path' arrayList.
 */
-void createPath(Node origin){
-  while(origin.cameFrom != null){
+void create_path(Node origin) {
+  path = new ArrayList<>();
+  while (origin.cameFrom != null) {
     path.add(origin);
     origin = origin.cameFrom;
   }
+}
+
+
+/**
+*  'display_path' iterates for each square on the display and draws it according to
+*  the legend of colors below. 
+*/
+void display_path(){
+  for (int i=0; i<h; i++) {
+      for (int j=0; j<w; j++) {
+        
+       fill(240, 240, 240);
+       strokeWeight(1);
+       stroke(95, 176, 184);
+       
+       if (open_set.contains(nodes[i][j])) {
+         fill(0, 128, 255);
+       }
+        
+       if (closed_set.contains(nodes[i][j])) {
+         fill(0, 195, 255);
+       }
+       
+       if (path.contains(nodes[i][j])) {
+         fill(153, 255, 0);
+       }
+       
+       if (obstacles[i][j] == 1) {
+         fill(30, 30, 30);
+         noStroke();
+       }
+       square(j*l, i*l, l);
+      }  
+    }
 }
 
 
@@ -241,3 +236,14 @@ int distance(Node a, Node b){
   return_value += (int)Math.abs(a.y-b.y);
   return return_value;
 }
+
+
+
+
+/**
+*  fill(240, 240, 240) ---> Normal element
+*  fill(0, 128, 255)   ---> Element contained in the open_set (element still used by the code)
+*  fill(0, 195, 255)   ---> Element contained in the closed_set
+*  fill(153, 255, 0)   ---> One of the element of the path at the time of displaying
+*  fill(30, 30, 30)    ---> An obstacle
+*/
