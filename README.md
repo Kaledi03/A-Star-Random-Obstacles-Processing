@@ -4,7 +4,7 @@
 that you can find [here] (https://en.wikipedia.org/wiki/A*_search_algorithm)
 
 ## Usage
-- Download the source code [here](https://github.com/Kaledi03/A-Star-Pathfinding-in-Processing)
+- Download the source code [here](https://github.com/Kaledi03/A-Star-Random-Obstacles-Processing)
 - Download processing [here](https://processing.org/download)
 - Open "A-star.pde" in Processing.exe
 - In the upper left corner click on "run"
